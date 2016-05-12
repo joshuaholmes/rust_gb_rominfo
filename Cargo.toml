@@ -1,0 +1,6 @@
+[package]
+name = "rust_gb_rominfo"
+version = "0.1.0"
+authors = ["Joshua Holmes"]
+
+[dependencies]
