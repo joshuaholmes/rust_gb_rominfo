@@ -48,10 +48,10 @@ impl From<io::Error> for RomLoadError {
 pub struct Rom {
 	pub entry_point: [u8; 4],
 	pub nintendo_logo: [u8; 48],
-	pub title: [u8; 11],
-	pub manufacturer_code: [u8; 4],
+	pub title: String,
+	pub manufacturer_code: String,
 	pub cgb_flag: u8,
-	pub new_licensee_code: [u8; 2],
+	pub new_licensee_code: String,
 	pub sgb_flag: u8,
 	pub cartridge_type: u8,
 	pub rom_size_flag: u8,
@@ -96,20 +96,16 @@ impl Rom {
 	    // read the multi-byte values into our buffers
 	    let mut entry_point = [0u8; 4];
 	    let mut nintendo_logo = [0u8; 48];
-		let mut title = [0u8; 11];
-		let mut manufacturer_code = [0u8; 4];
 
-		util::get_subarray_of_vector(&mut entry_point, &buf, ENTRY_POINT_ADDR);
-		util::get_subarray_of_vector(&mut nintendo_logo, &buf, NINTENDO_LOGO_ADDR);
-		util::get_subarray_of_vector(&mut title, &buf, TITLE_ADDR);
-		util::get_subarray_of_vector(&mut manufacturer_code, &buf, MANUFACTURER_CODE_ADDR);
+	    util::get_subarray_of_vector(&mut entry_point, &buf, ENTRY_POINT_ADDR);
+	    util::get_subarray_of_vector(&mut nintendo_logo, &buf, NINTENDO_LOGO_ADDR);
 
 	    Ok(Rom {
 	    	entry_point: entry_point,
 	    	nintendo_logo: nintendo_logo,
-	    	title: title,
-	    	manufacturer_code: manufacturer_code,
-	    	new_licensee_code: [buf[NEW_LICENSEE_CODE_ADDR], buf[NEW_LICENSEE_CODE_ADDR + 1]],
+	    	title: util::bytes_to_string(&buf[TITLE_ADDR..MANUFACTURER_CODE_ADDR]).to_owned(),
+	    	manufacturer_code: util::bytes_to_string(&buf[MANUFACTURER_CODE_ADDR..CGB_FLAG_ADDR]).to_owned(),
+	    	new_licensee_code: util::bytes_to_string(&buf[NEW_LICENSEE_CODE_ADDR..SGB_FLAG_ADDR]).to_owned(),
 	    	cgb_flag: buf[CGB_FLAG_ADDR],
 	    	sgb_flag: buf[SGB_FLAG_ADDR],
 	    	cartridge_type: buf[CARTRIDGE_TYPE_ADDR],
@@ -122,21 +118,6 @@ impl Rom {
 	    	global_checksum: ((buf[GLOBAL_CHECKSUM_ADDR] as u16) << 8) | (buf[GLOBAL_CHECKSUM_ADDR + 1] as u16),
 	    	rom_data: buf,
 	    })
-	}
-
-	/// Gets a string representation of the ROM title
-	pub fn get_title_string(&self) -> &str {
-		util::bytes_to_utf8_string(&self.title)
-	}
-
-	/// Gets a string represention of the manufacturer code
-	pub fn get_manufacturer_code_string(&self) -> &str {
-		util::bytes_to_utf8_string(&self.manufacturer_code)
-	}
-
-	/// Gets a string representation of the new licensee code
-	pub fn get_new_licensee_code_string(&self) -> &str {
-		util::bytes_to_utf8_string(&self.new_licensee_code)
 	}
 
 	/// Says whether the header checksum is valid

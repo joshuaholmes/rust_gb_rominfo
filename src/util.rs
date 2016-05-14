@@ -18,8 +18,8 @@ pub fn get_subarray_of_vector(mut arr: &mut [u8], vec: &Vec<u8>, start: usize) {
     }
 }
 
-/// Converts the given u8 slice into a UTF-8 string
-pub fn bytes_to_utf8_string(bytes: &[u8]) -> &str {
+/// Converts the given u8 slice into a string
+pub fn bytes_to_string(bytes: &[u8]) -> &str {
     match str::from_utf8(bytes) {
         Ok(v) => v,
         Err(e) => panic!("Invalid UTF-8 sequence: {}", e),

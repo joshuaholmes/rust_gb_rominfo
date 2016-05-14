@@ -23,10 +23,10 @@ fn main() {
     };
 
     // print out all the info
-    println!("\nTitle: {}", rom_file.get_title_string());
-    println!("Manufacturer code: {}", rom_file.get_manufacturer_code_string());
+    println!("\nTitle: {}", rom_file.title);
+    println!("Manufacturer code: {}", rom_file.manufacturer_code);
     println!("CGB flag: {:#X}", rom_file.cgb_flag);
-    println!("New licensee code: {}", rom_file.get_new_licensee_code_string());
+    println!("New licensee code: {}", rom_file.new_licensee_code);
     println!("SGB flag: {:#X}", rom_file.sgb_flag);
     println!("Cartridge type: {:#X}", rom_file.cartridge_type);
     println!("ROM size flag: {:#X}", rom_file.rom_size_flag);
