@@ -12,6 +12,23 @@ use std::str;
 
 use util;
 
+// Header address constants
+const ENTRY_POINT_ADDR: usize = 0x0100;
+const NINTENDO_LOGO_ADDR: usize = 0x0104;
+const TITLE_ADDR: usize = 0x0134;
+const MANUFACTURER_CODE_ADDR: usize = 0x013F;
+const CGB_FLAG_ADDR: usize = 0x0143;
+const NEW_LICENSEE_CODE_ADDR: usize = 0x0144;
+const SGB_FLAG_ADDR: usize = 0x0146;
+const CARTRIDGE_TYPE_ADDR: usize = 0x0147;
+const ROM_SIZE_ADDR: usize = 0x0148;
+const RAM_SIZE_ADDR: usize = 0x0149;
+const DESTINATION_CODE_ADDR: usize = 0x014A;
+const OLD_LICENSEE_CODE_ADDR: usize = 0x014B;
+const MASK_ROM_VERSION_NUMBER_ADDR: usize = 0x014C;
+const HEADER_CHECKSUM_ADDR: usize = 0x014D;
+const GLOBAL_CHECKSUM_ADDR: usize = 0x014E;
+
 /// RomLoadError borrowed from sprocketnes
 #[derive(Debug)]
 pub enum RomLoadError {
@@ -72,7 +89,7 @@ impl Rom {
 
 	    // if the ROM size is less than or equal to the size needed to simply 
 	    // store the cartridge header, then it's invalid
-	    if buf.len() <= 0x014F {
+	    if buf.len() <= GLOBAL_CHECKSUM_ADDR + 1 {
 	    	return Err(RomLoadError::FormatError)
 	    }
 
@@ -82,27 +99,27 @@ impl Rom {
 		let mut title = [0u8; 11];
 		let mut manufacturer_code = [0u8; 4];
 
-		util::get_subarray_of_vector(&mut entry_point, &buf, 0x0100);
-		util::get_subarray_of_vector(&mut nintendo_logo, &buf, 0x0104);
-		util::get_subarray_of_vector(&mut title, &buf, 0x0134);
-		util::get_subarray_of_vector(&mut manufacturer_code, &buf, 0x013F);
+		util::get_subarray_of_vector(&mut entry_point, &buf, ENTRY_POINT_ADDR);
+		util::get_subarray_of_vector(&mut nintendo_logo, &buf, NINTENDO_LOGO_ADDR);
+		util::get_subarray_of_vector(&mut title, &buf, TITLE_ADDR);
+		util::get_subarray_of_vector(&mut manufacturer_code, &buf, MANUFACTURER_CODE_ADDR);
 
 	    Ok(Rom {
 	    	entry_point: entry_point,
 	    	nintendo_logo: nintendo_logo,
 	    	title: title,
 	    	manufacturer_code: manufacturer_code,
-	    	new_licensee_code: [buf[0x0144], buf[0x0145]],
-	    	cgb_flag: buf[0x0143],
-	    	sgb_flag: buf[0x0146],
-	    	cartridge_type: buf[0x0147],
-	    	rom_size_flag: buf[0x0148],
-	    	ram_size_flag: buf[0x0149],
-	    	destination_code: buf[0x014A],
-	    	old_licensee_code: buf[0x014B],
-	    	mask_rom_version_number: buf[0x014C],
-	    	header_checksum: buf[0x014D],
-	    	global_checksum: ((buf[0x014E] as u16) << 8) | (buf[0x014F] as u16),
+	    	new_licensee_code: [buf[NEW_LICENSEE_CODE_ADDR], buf[NEW_LICENSEE_CODE_ADDR + 1]],
+	    	cgb_flag: buf[CGB_FLAG_ADDR],
+	    	sgb_flag: buf[SGB_FLAG_ADDR],
+	    	cartridge_type: buf[CARTRIDGE_TYPE_ADDR],
+	    	rom_size_flag: buf[ROM_SIZE_ADDR],
+	    	ram_size_flag: buf[RAM_SIZE_ADDR],
+	    	destination_code: buf[DESTINATION_CODE_ADDR],
+	    	old_licensee_code: buf[OLD_LICENSEE_CODE_ADDR],
+	    	mask_rom_version_number: buf[MASK_ROM_VERSION_NUMBER_ADDR],
+	    	header_checksum: buf[HEADER_CHECKSUM_ADDR],
+	    	global_checksum: ((buf[GLOBAL_CHECKSUM_ADDR] as u16) << 8) | (buf[GLOBAL_CHECKSUM_ADDR + 1] as u16),
 	    	rom_data: buf,
 	    })
 	}
@@ -126,7 +143,7 @@ impl Rom {
 	pub fn is_header_checksum_valid(&self) -> bool {
 		let mut calculated_header_checksum: u16 = 0;
 
-	    for i in 0x0134..0x014D {
+	    for i in TITLE_ADDR..HEADER_CHECKSUM_ADDR {
 	        calculated_header_checksum = calculated_header_checksum - (self.rom_data[i] as u16) - 1;
 	    }
 
@@ -138,7 +155,7 @@ impl Rom {
 		let mut calculated_global_checksum: u16 = 0;
 
 	    for (i, x) in self.rom_data.iter().enumerate() {
-	        if i != 0x014E && i != 0x014F {
+	        if i != GLOBAL_CHECKSUM_ADDR && i != (GLOBAL_CHECKSUM_ADDR + 1) {
 	            calculated_global_checksum += *x as u16;
 	        }
 	    }
