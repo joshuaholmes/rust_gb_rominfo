@@ -6,7 +6,7 @@
 
 use std::error::Error;
 use std::fs::File;
-use std::io::{self, Read, Seek, SeekFrom};
+use std::io::{self, Read};
 use std::path::Path;
 use std::str;
 
@@ -48,7 +48,7 @@ pub struct Rom {
 }
 
 impl Rom {
-	/// Takes in a file path and returns a Rom
+	/// Takes in a file path string and returns a Rom
 	pub fn from_file_path(filepath: &str) -> Result<Rom, RomLoadError> {
 	    let path = Path::new(filepath);
 
@@ -70,54 +70,39 @@ impl Rom {
 	        Ok(_) => (),
 	    }
 
-	    // if the ROM isn't even large enough to hold a header, it's invalid
+	    // if the ROM size is less than or equal to the size needed to simply 
+	    // store the cartridge header, then it's invalid
 	    if buf.len() <= 0x014F {
 	    	return Err(RomLoadError::FormatError)
 	    }
 
-	    // multi-byte values, copy as a chunk from the buffer
+	    // read the multi-byte values into our buffers
 	    let mut entry_point = [0u8; 4];
 	    let mut nintendo_logo = [0u8; 48];
 		let mut title = [0u8; 11];
 		let mut manufacturer_code = [0u8; 4];
-		let mut new_licensee_code = [0u8; 2];
 
-		try!(file.seek(SeekFrom::Start(0x0100)));
-		try!(util::read_to_buf(&mut entry_point, file));
-		try!(util::read_to_buf(&mut nintendo_logo, file));
-		try!(util::read_to_buf(&mut title, file));
-		try!(util::read_to_buf(&mut manufacturer_code, file));
-		try!(file.seek(SeekFrom::Start(0x0144)));
-		try!(util::read_to_buf(&mut new_licensee_code, file));
-
-		// single-byte values, read from the buffer directly
-		let cgb_flag = buf[0x0143];
-		let sgb_flag = buf[0x0146];
-	    let cartridge_type = buf[0x0147];
-	    let rom_size_flag = buf[0x0148];
-	    let ram_size_flag = buf[0x0149];
-	    let destination_code = buf[0x014A];
-	    let old_licensee_code = buf[0x014B];
-	    let mask_rom_version_number = buf[0x014C];
-	    let header_checksum = buf[0x014D];
-	    let global_checksum = ((buf[0x014E] as u16) << 8) | (buf[0x014F] as u16); 
+		util::get_subarray_of_vector(&mut entry_point, &buf, 0x0100);
+		util::get_subarray_of_vector(&mut nintendo_logo, &buf, 0x0104);
+		util::get_subarray_of_vector(&mut title, &buf, 0x0134);
+		util::get_subarray_of_vector(&mut manufacturer_code, &buf, 0x013F);
 
 	    Ok(Rom {
 	    	entry_point: entry_point,
 	    	nintendo_logo: nintendo_logo,
 	    	title: title,
 	    	manufacturer_code: manufacturer_code,
-	    	cgb_flag: cgb_flag,
-	    	new_licensee_code: new_licensee_code,
-	    	sgb_flag: sgb_flag,
-	    	cartridge_type: cartridge_type,
-	    	rom_size_flag: rom_size_flag,
-	    	ram_size_flag: ram_size_flag,
-	    	destination_code: destination_code,
-	    	old_licensee_code: old_licensee_code,
-	    	mask_rom_version_number: mask_rom_version_number,
-	    	header_checksum: header_checksum,
-	    	global_checksum: global_checksum,
+	    	new_licensee_code: [buf[0x0144], buf[0x0145]],
+	    	cgb_flag: buf[0x0143],
+	    	sgb_flag: buf[0x0146],
+	    	cartridge_type: buf[0x0147],
+	    	rom_size_flag: buf[0x0148],
+	    	ram_size_flag: buf[0x0149],
+	    	destination_code: buf[0x014A],
+	    	old_licensee_code: buf[0x014B],
+	    	mask_rom_version_number: buf[0x014C],
+	    	header_checksum: buf[0x014D],
+	    	global_checksum: ((buf[0x014E] as u16) << 8) | (buf[0x014F] as u16),
 	    	rom_data: buf,
 	    })
 	}
