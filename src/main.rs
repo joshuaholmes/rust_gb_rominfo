@@ -25,12 +25,12 @@ fn main() {
     // print out all the info
     println!("\nTitle: {}", rom_file.title);
     println!("Manufacturer code: {}", rom_file.manufacturer_code);
-    println!("CGB flag: {:#X}", rom_file.cgb_flag);
+    println!("CGB flag: {:?}", rom_file.cgb_flag);
     println!("New licensee code: {}", rom_file.new_licensee_code);
-    println!("SGB flag: {:#X}", rom_file.sgb_flag);
-    println!("Cartridge type: {:#X}", rom_file.cartridge_type);
-    println!("ROM size flag: {:#X}", rom_file.rom_size_flag);
-    println!("RAM size flag: {:#X}", rom_file.ram_size_flag);
+    println!("SGB flag: {:?}", rom_file.sgb_flag);
+    println!("Cartridge type: {:?}", rom_file.cartridge_type);
+    println!("ROM size: {:?}", rom_file.rom_size);
+    println!("RAM size: {:#X}", rom_file.ram_size);
     println!("Destination code: {:#X}", rom_file.destination_code);
     println!("Old licensee code: {:#X}", rom_file.old_licensee_code);
     println!("Mask ROM version number: {:#X}", rom_file.mask_rom_version_number);
