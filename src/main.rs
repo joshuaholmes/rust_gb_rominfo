@@ -36,4 +36,5 @@ fn main() {
     println!("Mask ROM version number: {:#X}", rom_file.mask_rom_version_number);
     println!("Header checksum: {:#X} (valid: {})", rom_file.header_checksum, rom_file.is_header_checksum_valid());
     println!("Global checksum: {:#X} (valid: {})", rom_file.global_checksum, rom_file.is_global_checksum_valid());
+    println!("Valid Nintendo logo: {}", rom_file.is_nintendo_logo_valid());
 }
