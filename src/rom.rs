@@ -329,8 +329,13 @@ impl Rom {
         match file.read_to_end(&mut buf) {
             Err(e) => panic!("Couldn't read ROM file. Error message: {}", Error::description(&e)),
             Ok(_) => (),
-        }
+        };
 
+        Rom::from_buffer(buf)
+    }
+
+    /// Takes in a u8 vector and returns a Rom structure
+    pub fn from_buffer(buf: Vec<u8>) -> Result<Rom, RomLoadError> {
         // if the ROM size is less than or equal to the size needed to simply 
         // store the cartridge header, then it's invalid
         if buf.len() <= GLOBAL_CHECKSUM_ADDR + 1 {
