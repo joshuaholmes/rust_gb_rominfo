@@ -228,6 +228,66 @@ impl fmt::Debug for RomSize {
     }
 }
 
+/// Represents the vaying amounts of on-cartridge RAM sizes that exist
+pub enum RamSize {
+    RamNone = 0x00,
+    Ram2K = 0x01,
+    Ram8K = 0x02,
+    Ram32K = 0x03,
+    Ram64K = 0x05,
+    Ram128K = 0x04,
+}
+
+impl RamSize {
+    fn from_u8(n: u8) -> Option<RamSize> {
+        use self::RamSize::*;
+
+        match n {
+            0x00 => Some(RamNone),
+            0x01 => Some(Ram2K),
+            0x02 => Some(Ram8K),
+            0x03 => Some(Ram32K),
+            0x04 => Some(Ram128K),
+            0x05 => Some(Ram64K),
+            _ => None
+        }
+    }
+}
+
+impl fmt::Debug for RamSize {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use self::RamSize::*;
+
+        write!(f, "{}", match *self {
+            RamNone => "None",
+            Ram2K => "2KByte",
+            Ram8K => "8KByte",
+            Ram32K => "32KByte",
+            Ram64K => "64KByte",
+            Ram128K => "128KByte",
+        })
+    }
+}
+
+/// Represents the ROM's destination code
+#[derive(Debug)]
+pub enum DestinationCode {
+    Japanese = 0x00,
+    NonJapanese = 0x01,
+}
+
+impl DestinationCode {
+    fn from_u8(n: u8) -> Option<DestinationCode> {
+        use self::DestinationCode::*;
+
+        match n {
+            0x00 => Some(Japanese),
+            0x01 => Some(NonJapanese),
+            _ => None
+        }
+    }
+}
+
 /// Represents a ROM file and its header metadata
 pub struct Rom {
     pub entry_point: [u8; 4],
@@ -239,8 +299,8 @@ pub struct Rom {
     pub sgb_flag: SgbFlag,
     pub cartridge_type: CartridgeType,
     pub rom_size: RomSize,
-    pub ram_size: u8,
-    pub destination_code: u8,
+    pub ram_size: RamSize,
+    pub destination_code: DestinationCode,
     pub old_licensee_code: u8,
     pub mask_rom_version_number: u8,
     pub header_checksum: u8,
@@ -301,6 +361,14 @@ impl Rom {
             format!("Invalid ROM size flag: {:#X}", buf[ROM_SIZE_ADDR])
         }));
 
+        let ram_size = try!(RamSize::from_u8(buf[RAM_SIZE_ADDR]).ok_or_else(|| {
+            format!("Invalid RAM size flag: {:#X}", buf[RAM_SIZE_ADDR])
+        }));
+
+        let destination_code = try!(DestinationCode::from_u8(buf[DESTINATION_CODE_ADDR]).ok_or_else(|| {
+            format!("Invalid destination code: {:#X}", buf[DESTINATION_CODE_ADDR])
+        }));
+
         Ok(Rom {
             entry_point: entry_point,
             nintendo_logo: nintendo_logo,
@@ -311,8 +379,8 @@ impl Rom {
             sgb_flag: sgb_flag,
             cartridge_type: cartridge_type,
             rom_size: rom_size,
-            ram_size: buf[RAM_SIZE_ADDR],
-            destination_code: buf[DESTINATION_CODE_ADDR],
+            ram_size: ram_size,
+            destination_code: destination_code,
             old_licensee_code: buf[OLD_LICENSEE_CODE_ADDR],
             mask_rom_version_number: buf[MASK_ROM_VERSION_NUMBER_ADDR],
             header_checksum: buf[HEADER_CHECKSUM_ADDR],

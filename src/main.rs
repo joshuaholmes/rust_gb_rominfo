@@ -30,8 +30,8 @@ fn main() {
     println!("SGB flag: {:?}", rom_file.sgb_flag);
     println!("Cartridge type: {:?}", rom_file.cartridge_type);
     println!("ROM size: {:?}", rom_file.rom_size);
-    println!("RAM size: {:#X}", rom_file.ram_size);
-    println!("Destination code: {:#X}", rom_file.destination_code);
+    println!("RAM size: {:?}", rom_file.ram_size);
+    println!("Destination code: {:?}", rom_file.destination_code);
     println!("Old licensee code: {:#X}", rom_file.old_licensee_code);
     println!("Mask ROM version number: {:#X}", rom_file.mask_rom_version_number);
     println!("Header checksum: {:#X} (valid: {})", rom_file.header_checksum, rom_file.is_header_checksum_valid());
