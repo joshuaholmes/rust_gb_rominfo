@@ -24,6 +24,7 @@ fn main() {
 
     // print out all the info
     println!("\nTitle: {}", rom_file.title);
+    println!("New style cartridge: {}", rom_file.new_cartridge);
     println!("Manufacturer code: {}", rom_file.manufacturer_code);
     println!("CGB flag: {:?}", rom_file.cgb_flag);
     println!("New licensee code: {}", rom_file.new_licensee_code);

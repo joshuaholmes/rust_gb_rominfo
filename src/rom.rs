@@ -30,6 +30,9 @@ const MASK_ROM_VERSION_NUMBER_ADDR: usize = 0x014C;
 const HEADER_CHECKSUM_ADDR: usize = 0x014D;
 const GLOBAL_CHECKSUM_ADDR: usize = 0x014E;
 
+// flag that says a cartridge is the new format
+const NEW_CARTRIDGE_FLAG: u8 = 0x33;
+
 // Nintendo logo constant -- the header should contain this
 const VALID_NINTENDO_LOGO: [u8; 48] = 
     [0xCE, 0xED, 0x66, 0x66, 0xCC, 0x0D, 0x00, 0x0B, 0x03, 0x73, 0x00, 0x83, 0x00, 0x0C, 0x00, 0x0D,
@@ -60,6 +63,7 @@ impl From<String> for RomLoadError {
 /// Represents the flags that specify GameBoy Color functionality
 #[derive(Debug)]
 pub enum CgbFlag {
+    NoCgb = 0x00,
     SupportsCgb = 0x80,
     CgbOnly = 0xC0,
 }
@@ -69,6 +73,7 @@ impl CgbFlag {
         use self::CgbFlag::*;
 
         match n {
+            0x00 => Some(NoCgb),
             0x80 => Some(SupportsCgb),
             0xC0 => Some(CgbOnly),
             _ => None
@@ -305,6 +310,7 @@ pub struct Rom {
     pub mask_rom_version_number: u8,
     pub header_checksum: u8,
     pub global_checksum: u16,
+    pub new_cartridge: bool,
     pub rom_data: Vec<u8>,
 }
 
@@ -342,6 +348,10 @@ impl Rom {
             return Err(RomLoadError::FormatError(format!("ROM file is too small. Size: {} bytes", buf.len())))
         }
 
+        // see if this cartridge is new-style or old-style
+        let new_cartridge = buf[OLD_LICENSEE_CODE_ADDR] == NEW_CARTRIDGE_FLAG;
+        let title_end_addr = if new_cartridge { MANUFACTURER_CODE_ADDR } else { NEW_LICENSEE_CODE_ADDR };
+
         // read the multi-byte values into our buffers
         let mut entry_point = [0u8; 4];
         let mut nintendo_logo = [0u8; 48];
@@ -350,9 +360,11 @@ impl Rom {
         util::get_subarray_of_vector(&mut nintendo_logo, &buf, NINTENDO_LOGO_ADDR);
 
         // read the enum flags
-        let cgb_flag = try!(CgbFlag::from_u8(buf[CGB_FLAG_ADDR]).ok_or_else(|| {
+        let cgb_flag = if new_cartridge { try!(CgbFlag::from_u8(buf[CGB_FLAG_ADDR]).ok_or_else(|| {
             format!("Invalid CGB flag: {:#X}", buf[CGB_FLAG_ADDR])
-        }));
+        })) } else {
+            CgbFlag::NoCgb
+        };
 
         let sgb_flag = try!(SgbFlag::from_u8(buf[SGB_FLAG_ADDR]).ok_or_else(|| {
             format!("Invalid SGB flag: {:#X}", buf[SGB_FLAG_ADDR])
@@ -377,9 +389,9 @@ impl Rom {
         Ok(Rom {
             entry_point: entry_point,
             nintendo_logo: nintendo_logo,
-            title: util::bytes_to_string(&buf[TITLE_ADDR..MANUFACTURER_CODE_ADDR]).to_owned(),
-            manufacturer_code: util::bytes_to_string(&buf[MANUFACTURER_CODE_ADDR..CGB_FLAG_ADDR]).to_owned(),
-            new_licensee_code: util::bytes_to_string(&buf[NEW_LICENSEE_CODE_ADDR..SGB_FLAG_ADDR]).to_owned(),
+            title: util::bytes_to_string(&buf[TITLE_ADDR..title_end_addr]).to_owned(),
+            manufacturer_code: if new_cartridge { util::bytes_to_string(&buf[MANUFACTURER_CODE_ADDR..CGB_FLAG_ADDR]).to_owned() } else { "".to_owned() },
+            new_licensee_code: if new_cartridge { util::bytes_to_string(&buf[NEW_LICENSEE_CODE_ADDR..SGB_FLAG_ADDR]).to_owned() } else { "".to_owned() },
             cgb_flag: cgb_flag,
             sgb_flag: sgb_flag,
             cartridge_type: cartridge_type,
@@ -390,6 +402,7 @@ impl Rom {
             mask_rom_version_number: buf[MASK_ROM_VERSION_NUMBER_ADDR],
             header_checksum: buf[HEADER_CHECKSUM_ADDR],
             global_checksum: ((buf[GLOBAL_CHECKSUM_ADDR] as u16) << 8) | (buf[GLOBAL_CHECKSUM_ADDR + 1] as u16),
+            new_cartridge: new_cartridge,
             rom_data: buf,
         })
     }
@@ -418,6 +431,7 @@ impl Rom {
         calculated_global_checksum == self.global_checksum
     }
 
+    /// Says whether the Nintendo logo is valid
     pub fn is_nintendo_logo_valid(&self) -> bool {
         self.nintendo_logo.iter().zip(VALID_NINTENDO_LOGO.iter()).all(|(a, b)| a == b) 
     }
