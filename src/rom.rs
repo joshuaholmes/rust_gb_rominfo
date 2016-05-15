@@ -8,6 +8,7 @@ use std::error::Error;
 use std::fmt;
 use std::fs::File;
 use std::io::{self, Read};
+use std::num::Wrapping;
 use std::path::Path;
 use std::str;
 
@@ -409,26 +410,26 @@ impl Rom {
 
     /// Says whether the header checksum is valid
     pub fn is_header_checksum_valid(&self) -> bool {
-        let mut calculated_header_checksum: u16 = 0;
+        let mut calculated_header_checksum = Wrapping(0u16);
 
         for i in TITLE_ADDR..HEADER_CHECKSUM_ADDR {
-            calculated_header_checksum = calculated_header_checksum - (self.rom_data[i] as u16) - 1;
+            calculated_header_checksum = calculated_header_checksum - Wrapping(self.rom_data[i] as u16) - Wrapping(1);
         }
 
-        (calculated_header_checksum as u8) == self.header_checksum
+        (calculated_header_checksum.0 as u8) == self.header_checksum
     }
 
     /// Says whether the global checksum is valid
     pub fn is_global_checksum_valid(&self) -> bool {
-        let mut calculated_global_checksum: u16 = 0;
+        let mut calculated_global_checksum = Wrapping(0u16);
 
         for (i, x) in self.rom_data.iter().enumerate() {
             if i != GLOBAL_CHECKSUM_ADDR && i != (GLOBAL_CHECKSUM_ADDR + 1) {
-                calculated_global_checksum += *x as u16;
+                calculated_global_checksum += Wrapping(*x as u16);
             }
         }
 
-        calculated_global_checksum == self.global_checksum
+        calculated_global_checksum.0 == self.global_checksum
     }
 
     /// Says whether the Nintendo logo is valid
